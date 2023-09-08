@@ -59333,7 +59333,7 @@ async function prepareBlender() {
     const zipTo = external_path_.join(BLENDER_WORKING_PATH, BLENDER_EXECUTABLE);
     await io.mkdirP(zipTo);
     await runExtract(zipFile, zipTo);
-    const executablePath = findExecutablePath(zipTo, 'Contents/MacOS/Blender');
+    const executablePath = findBlenderExecutablePath(zipTo, 'Contents/MacOS/Blender');
     if (!executablePath) {
         throw new Error('Could not find Blender executable');
     }
@@ -59345,7 +59345,7 @@ async function prepareExecutable() {
     const zipFile = external_path_.join(GODOT_WORKING_PATH, GODOT_ZIP);
     const zipTo = external_path_.join(GODOT_WORKING_PATH, GODOT_EXECUTABLE);
     await (0,exec.exec)('7z', ['x', zipFile, `-o${zipTo}`, '-y']);
-    const executablePath = findExecutablePath(zipTo, 'Contents/MacOS/Godot');
+    const executablePath = findGodotExecutablePath(zipTo, 'Contents/MacOS/Godot');
     if (!executablePath) {
         throw new Error('Could not find Godot executable');
     }
@@ -59454,7 +59454,33 @@ function configureWindowsExport() {
     core.info(`Wrote settings to ${editorSettingsPath}`);
     core.endGroup();
 }
-function findExecutablePath(basePath, macPath) {
+function findBlenderExecutablePath(basePath, macPath) {
+    const paths = external_fs_.readdirSync(basePath);
+    const dirs = [];
+    for (const subPath of paths) {
+        const fullPath = external_path_.join(basePath, subPath);
+        const stats = external_fs_.statSync(fullPath);
+        // || path.basename === 'Godot' && process.platform === 'darwin';
+        const isLinux = stats.isFile() && fullPath.endsWith('blender');
+        const isMac = stats.isDirectory() && external_path_.extname(fullPath) === '.app' && process.platform === 'darwin';
+        if (isLinux) {
+            return fullPath;
+        }
+        else if (isMac) {
+            return external_path_.join(fullPath, macPath);
+        }
+        else {
+            if (stats.isDirectory()) {
+                dirs.push(fullPath);
+            }
+        }
+    }
+    for (const dir of dirs) {
+        return findBlenderExecutablePath(dir, macPath);
+    }
+    return undefined;
+}
+function findGodotExecutablePath(basePath, macPath) {
     const paths = external_fs_.readdirSync(basePath);
     const dirs = [];
     for (const subPath of paths) {
@@ -59471,11 +59497,13 @@ function findExecutablePath(basePath, macPath) {
             return external_path_.join(fullPath, macPath);
         }
         else {
-            dirs.push(fullPath);
+            if (stats.isDirectory()) {
+                dirs.push(fullPath);
+            }
         }
     }
     for (const dir of dirs) {
-        return findExecutablePath(dir, macPath);
+        return findGodotExecutablePath(dir, macPath);
     }
     return undefined;
 }

@@ -340,7 +340,7 @@ function findBlenderExecutablePath(basePath: string, macPath: string): string | 
     const fullPath = path.join(basePath, subPath);
     const stats = fs.statSync(fullPath);
     // || path.basename === 'Godot' && process.platform === 'darwin';
-    const isLinux = stats.isFile() && (fullPath.endsWith('blender'));
+    const isLinux = stats.isFile() && fullPath.endsWith('blender');
     const isMac = stats.isDirectory() && path.extname(fullPath) === '.app' && process.platform === 'darwin';
     if (isLinux) {
       return fullPath;
