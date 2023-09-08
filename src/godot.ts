@@ -348,7 +348,9 @@ function findExecutablePath(basePath: string, macPath: string): string | undefin
       // https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html
       return path.join(fullPath, macPath);
     } else {
-      dirs.push(fullPath);
+      if (stats.isDirectory()) {
+        dirs.push(fullPath);
+      }
     }
   }
   for (const dir of dirs) {
