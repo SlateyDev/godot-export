@@ -3,6 +3,7 @@ import path from 'path';
 import * as os from 'os';
 
 const ARCHIVE_OUTPUT = core.getInput('archive_output') === 'true';
+const BLENDER_DOWNLOAD_URL = core.getInput('blender_executable_download_url');
 const CACHE_ACTIVE = core.getInput('cache') === 'true';
 const GENERATE_RELEASE_NOTES = core.getInput('generate_release_notes') === 'true';
 const GODOT_DOWNLOAD_URL = core.getInput('godot_executable_download_url');
@@ -17,6 +18,7 @@ const ARCHIVE_ROOT_FOLDER = core.getInput('archive_root_folder') === 'true';
 const USE_GODOT_3 = core.getInput('use_godot_3') === 'true';
 const EXPORT_PACK_ONLY = core.getInput('export_as_pack') === 'true';
 
+const BLENDER_WORKING_PATH = path.resolve(path.join(os.homedir(), '/.local/share/blender'));
 const GODOT_WORKING_PATH = path.resolve(path.join(os.homedir(), '/.local/share/godot'));
 const GODOT_EXPORT_TEMPLATES_PATH = path.resolve(
   path.join(
@@ -35,6 +37,8 @@ const GODOT_PROJECT_FILE_PATH = path.join(GODOT_PROJECT_PATH, 'project.godot');
 export {
   ARCHIVE_OUTPUT,
   ARCHIVE_ROOT_FOLDER,
+  BLENDER_DOWNLOAD_URL,
+  BLENDER_WORKING_PATH,
   CACHE_ACTIVE,
   EXPORT_DEBUG,
   EXPORT_PACK_ONLY,
