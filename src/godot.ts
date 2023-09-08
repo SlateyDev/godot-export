@@ -188,7 +188,7 @@ async function prepareBlender(): Promise<void> {
   const zipTo = path.join(BLENDER_WORKING_PATH, BLENDER_EXECUTABLE);
   await io.mkdirP(zipTo);
   await runExtract(zipFile, zipTo);
-  const executablePath = findExecutablePath(zipTo, 'Contents/MacOS/Blender');
+  const executablePath = findBlenderExecutablePath(zipTo, 'Contents/MacOS/Blender');
   if (!executablePath) {
     throw new Error('Could not find Blender executable');
   }
@@ -202,7 +202,7 @@ async function prepareExecutable(): Promise<void> {
   const zipFile = path.join(GODOT_WORKING_PATH, GODOT_ZIP);
   const zipTo = path.join(GODOT_WORKING_PATH, GODOT_EXECUTABLE);
   await exec('7z', ['x', zipFile, `-o${zipTo}`, '-y']);
-  const executablePath = findExecutablePath(zipTo, 'Contents/MacOS/Godot');
+  const executablePath = findGodotExecutablePath(zipTo, 'Contents/MacOS/Godot');
   if (!executablePath) {
     throw new Error('Could not find Godot executable');
   }
@@ -333,7 +333,32 @@ function configureWindowsExport(): void {
   core.endGroup();
 }
 
-function findExecutablePath(basePath: string, macPath: string): string | undefined {
+function findBlenderExecutablePath(basePath: string, macPath: string): string | undefined {
+  const paths = fs.readdirSync(basePath);
+  const dirs: string[] = [];
+  for (const subPath of paths) {
+    const fullPath = path.join(basePath, subPath);
+    const stats = fs.statSync(fullPath);
+    // || path.basename === 'Godot' && process.platform === 'darwin';
+    const isLinux = stats.isFile() && (fullPath.endsWith('blender'));
+    const isMac = stats.isDirectory() && path.extname(fullPath) === '.app' && process.platform === 'darwin';
+    if (isLinux) {
+      return fullPath;
+    } else if (isMac) {
+      return path.join(fullPath, macPath);
+    } else {
+      if (stats.isDirectory()) {
+        dirs.push(fullPath);
+      }
+    }
+  }
+  for (const dir of dirs) {
+    return findBlenderExecutablePath(dir, macPath);
+  }
+  return undefined;
+}
+
+function findGodotExecutablePath(basePath: string, macPath: string): string | undefined {
   const paths = fs.readdirSync(basePath);
   const dirs: string[] = [];
   for (const subPath of paths) {
@@ -354,7 +379,7 @@ function findExecutablePath(basePath: string, macPath: string): string | undefin
     }
   }
   for (const dir of dirs) {
-    return findExecutablePath(dir, macPath);
+    return findGodotExecutablePath(dir, macPath);
   }
   return undefined;
 }
