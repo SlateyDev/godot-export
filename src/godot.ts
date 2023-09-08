@@ -8,6 +8,8 @@ import * as ini from 'ini';
 import { ExportPresets, ExportPreset, BuildResult } from './types/GodotExport';
 import sanitize from 'sanitize-filename';
 import {
+  BLENDER_DOWNLOAD_URL,
+  BLENDER_WORKING_PATH,
   GODOT_CONFIG_PATH,
   GODOT_DOWNLOAD_URL,
   GODOT_TEMPLATES_DOWNLOAD_URL,
@@ -24,12 +26,15 @@ import {
   CACHE_ACTIVE,
 } from './constants';
 
+const BLENDER_EXECUTABLE = 'blender_executable';
+const BLENDER_ZIP = 'blender.zip';
 const GODOT_EXECUTABLE = 'godot_executable';
 const GODOT_ZIP = 'godot.zip';
 const GODOT_TEMPLATES_FILENAME = 'godot_templates.tpz';
 const EDITOR_SETTINGS_FILENAME = USE_GODOT_3 ? 'editor_settings-3.tres' : 'editor_settings-4.tres';
 
 let godotExecutablePath: string;
+let blenderExecutablePath: string;
 
 async function exportBuilds(): Promise<BuildResult[]> {
   if (!hasExportPresets()) {
@@ -41,6 +46,10 @@ async function exportBuilds(): Promise<BuildResult[]> {
 
   core.startGroup('🕹️ Download Godot');
   await downloadGodot();
+  core.endGroup();
+
+  core.startGroup('👾 Download Blender');
+  await downloadBlender();
   core.endGroup();
 
   core.startGroup('🔍 Adding Editor Settings');
@@ -69,6 +78,18 @@ function hasExportPresets(): boolean {
   } catch (e) {
     return false;
   }
+}
+
+async function downloadBlender(): Promise<void> {
+  if (!BLENDER_DOWNLOAD_URL) return;
+
+  await io.mkdirP(BLENDER_WORKING_PATH);
+  core.info(`Path created for Blender ${BLENDER_WORKING_PATH}`);
+  const blenderPath = path.join(BLENDER_WORKING_PATH, BLENDER_ZIP);
+  const cacheKey = `blender-executable-${BLENDER_DOWNLOAD_URL}`;
+  const restoreKey = `blender-executable-${BLENDER_DOWNLOAD_URL}`;
+  await downloadFile(blenderPath, BLENDER_DOWNLOAD_URL, cacheKey, restoreKey);
+  await prepareBlender();
 }
 
 async function downloadGodot(): Promise<void> {
@@ -145,11 +166,25 @@ function isCacheFeatureAvailable(): boolean {
   return false;
 }
 
+async function prepareBlender(): Promise<void> {
+  const zipFile = path.join(BLENDER_WORKING_PATH, BLENDER_ZIP);
+  const zipTo = path.join(BLENDER_WORKING_PATH, BLENDER_EXECUTABLE);
+  await exec('7z', ['x', zipFile, `-o${zipTo}`, '-y']);
+  const executablePath = findExecutablePath(zipTo, 'Contents/MacOS/Blender');
+  if (!executablePath) {
+    throw new Error('Could not find Blender executable');
+  }
+  core.info(`Found executable at ${executablePath}`);
+
+  await exec('chmod', ['+x', executablePath]);
+  blenderExecutablePath = executablePath;
+}
+
 async function prepareExecutable(): Promise<void> {
   const zipFile = path.join(GODOT_WORKING_PATH, GODOT_ZIP);
   const zipTo = path.join(GODOT_WORKING_PATH, GODOT_EXECUTABLE);
   await exec('7z', ['x', zipFile, `-o${zipTo}`, '-y']);
-  const executablePath = findGodotExecutablePath(zipTo);
+  const executablePath = findExecutablePath(zipTo, 'Contents/MacOS/Godot');
   if (!executablePath) {
     throw new Error('Could not find Godot executable');
   }
@@ -280,7 +315,7 @@ function configureWindowsExport(): void {
   core.endGroup();
 }
 
-function findGodotExecutablePath(basePath: string): string | undefined {
+function findExecutablePath(basePath: string, macPath: string): string | undefined {
   const paths = fs.readdirSync(basePath);
   const dirs: string[] = [];
   for (const subPath of paths) {
@@ -293,13 +328,13 @@ function findGodotExecutablePath(basePath: string): string | undefined {
       return fullPath;
     } else if (isMac) {
       // https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html
-      return path.join(fullPath, 'Contents/MacOS/Godot');
+      return path.join(fullPath, macPath);
     } else {
       dirs.push(fullPath);
     }
   }
   for (const dir of dirs) {
-    return findGodotExecutablePath(dir);
+    return findExecutablePath(dir, macPath);
   }
   return undefined;
 }
@@ -329,10 +364,21 @@ function getExportPresets(): ExportPreset[] {
 
 async function addEditorSettings(): Promise<void> {
   const editorSettingsDist = path.join(__dirname, EDITOR_SETTINGS_FILENAME);
-  await io.mkdirP(GODOT_CONFIG_PATH);
+  // await io.mkdirP(GODOT_CONFIG_PATH);
 
   const editorSettingsPath = path.join(GODOT_CONFIG_PATH, EDITOR_SETTINGS_FILENAME);
-  await io.cp(editorSettingsDist, editorSettingsPath, { force: false });
+  // await io.cp(editorSettingsDist, editorSettingsPath, { force: false });
+
+  fs.readFile(editorSettingsDist, 'utf8', function (err, data) {
+    if (err) {
+      return core.error(err);
+    }
+    const result = data.replace(/blenderExecutablePath/g, blenderExecutablePath);
+
+    fs.writeFile(editorSettingsPath, result, 'utf8', function (err2) {
+      if (err2) return core.error(err2);
+    });
+  });
   core.info(`Wrote editor settings to ${editorSettingsPath}`);
 }
 

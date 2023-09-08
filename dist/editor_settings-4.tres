@@ -2,3 +2,4 @@
 
 [resource]
 export/android/android_sdk_path = "/usr/local/lib/android/sdk"
+filesystem/import/blender/blender3_path = "blenderExecutablePath"
