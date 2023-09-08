@@ -70,7 +70,7 @@ async function exportBuilds(): Promise<BuildResult[]> {
   core.endGroup();
 
   core.startGroup('🔍 Adding Editor Settings');
-  await addEditorSettings();
+  addEditorSettings();
   core.endGroup();
 
   if (WINE_PATH) {
@@ -407,23 +407,19 @@ function getExportPresets(): ExportPreset[] {
   return exportPrests;
 }
 
-async function addEditorSettings(): Promise<void> {
+function addEditorSettings(): void {
   const editorSettingsDist = path.join(__dirname, EDITOR_SETTINGS_FILENAME);
   // await io.mkdirP(GODOT_CONFIG_PATH);
 
   const editorSettingsPath = path.join(GODOT_CONFIG_PATH, EDITOR_SETTINGS_FILENAME);
   // await io.cp(editorSettingsDist, editorSettingsPath, { force: false });
 
-  fs.readFile(editorSettingsDist, 'utf8', function (err, data) {
-    if (err) {
-      return core.error(err);
-    }
-    const result = data.replace(/blenderExecutablePath/g, blenderExecutablePath);
+  core.info(`Reading dist editor settings at: ${editorSettingsDist}`);
+  const data = fs.readFileSync(editorSettingsDist, 'utf8');
+  const result = data.replace(/blenderExecutablePath/g, blenderExecutablePath);
+  core.info(`Writing editor settings as:\n${result}`);
 
-    fs.writeFile(editorSettingsPath, result, 'utf8', function (err2) {
-      if (err2) return core.error(err2);
-    });
-  });
+  fs.writeFileSync(editorSettingsPath, result, 'utf8');
   core.info(`Wrote editor settings to ${editorSettingsPath}`);
 }
 

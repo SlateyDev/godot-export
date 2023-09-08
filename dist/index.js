@@ -59236,7 +59236,7 @@ async function exportBuilds() {
     await downloadBlender();
     core.endGroup();
     core.startGroup('🔍 Adding Editor Settings');
-    await addEditorSettings();
+    addEditorSettings();
     core.endGroup();
     if (WINE_PATH) {
         configureWindowsExport();
@@ -59526,21 +59526,16 @@ function getExportPresets() {
     }
     return exportPrests;
 }
-async function addEditorSettings() {
+function addEditorSettings() {
     const editorSettingsDist = external_path_.join(__dirname, EDITOR_SETTINGS_FILENAME);
     // await io.mkdirP(GODOT_CONFIG_PATH);
     const editorSettingsPath = external_path_.join(GODOT_CONFIG_PATH, EDITOR_SETTINGS_FILENAME);
     // await io.cp(editorSettingsDist, editorSettingsPath, { force: false });
-    external_fs_.readFile(editorSettingsDist, 'utf8', function (err, data) {
-        if (err) {
-            return core.error(err);
-        }
-        const result = data.replace(/blenderExecutablePath/g, blenderExecutablePath);
-        external_fs_.writeFile(editorSettingsPath, result, 'utf8', function (err2) {
-            if (err2)
-                return core.error(err2);
-        });
-    });
+    core.info(`Reading dist editor settings at: ${editorSettingsDist}`);
+    const data = external_fs_.readFileSync(editorSettingsDist, 'utf8');
+    const result = data.replace(/blenderExecutablePath/g, blenderExecutablePath);
+    core.info(`Writing editor settings as:\n${result}`);
+    external_fs_.writeFileSync(editorSettingsPath, result, 'utf8');
     core.info(`Wrote editor settings to ${editorSettingsPath}`);
 }
 /** Open the editor in headless mode once, to import all assets, creating the `.godot` directory if it doesn't exist. */
