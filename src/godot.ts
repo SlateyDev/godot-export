@@ -186,6 +186,7 @@ function isCacheFeatureAvailable(): boolean {
 async function prepareBlender(): Promise<void> {
   const zipFile = path.join(BLENDER_WORKING_PATH, BLENDER_OUT);
   const zipTo = path.join(BLENDER_WORKING_PATH, BLENDER_EXECUTABLE);
+  await io.mkdirP(zipTo);
   await runExtract(zipFile, zipTo);
   const executablePath = findExecutablePath(zipTo, 'Contents/MacOS/Blender');
   if (!executablePath) {
