@@ -407,7 +407,7 @@ function getExportPresets(): ExportPreset[] {
   return exportPrests;
 }
 
-function addEditorSettings(): void {
+async function addEditorSettings(): Promise<void> {
   const editorSettingsDist = path.join(__dirname, EDITOR_SETTINGS_FILENAME);
   await io.mkdirP(GODOT_CONFIG_PATH);
 
@@ -415,11 +415,11 @@ function addEditorSettings(): void {
   // await io.cp(editorSettingsDist, editorSettingsPath, { force: false });
 
   core.info(`Reading dist editor settings at: ${editorSettingsDist}`);
-  const data = fs.readFileSync(editorSettingsDist, 'utf8');
+  const data = await fs.promises.readFile(editorSettingsDist, 'utf8');
   const result = data.replace(/blenderExecutablePath/g, blenderExecutablePath);
   core.info(`Writing editor settings as:\n${result}`);
 
-  fs.writeFileSync(editorSettingsPath, result, 'utf8');
+  await fs.promises.writeFile(editorSettingsPath, result, 'utf8');
   core.info(`Wrote editor settings to ${editorSettingsPath}`);
 }
 

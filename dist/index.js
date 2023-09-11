@@ -59526,16 +59526,16 @@ function getExportPresets() {
     }
     return exportPrests;
 }
-function addEditorSettings() {
+async function addEditorSettings() {
     const editorSettingsDist = external_path_.join(__dirname, EDITOR_SETTINGS_FILENAME);
-    // await io.mkdirP(GODOT_CONFIG_PATH);
+    await io.mkdirP(GODOT_CONFIG_PATH);
     const editorSettingsPath = external_path_.join(GODOT_CONFIG_PATH, EDITOR_SETTINGS_FILENAME);
     // await io.cp(editorSettingsDist, editorSettingsPath, { force: false });
     core.info(`Reading dist editor settings at: ${editorSettingsDist}`);
-    const data = external_fs_.readFileSync(editorSettingsDist, 'utf8');
+    const data = await external_fs_.promises.readFile(editorSettingsDist, 'utf8');
     const result = data.replace(/blenderExecutablePath/g, blenderExecutablePath);
     core.info(`Writing editor settings as:\n${result}`);
-    external_fs_.writeFileSync(editorSettingsPath, result, 'utf8');
+    await external_fs_.promises.writeFile(editorSettingsPath, result, 'utf8');
     core.info(`Wrote editor settings to ${editorSettingsPath}`);
 }
 /** Open the editor in headless mode once, to import all assets, creating the `.godot` directory if it doesn't exist. */
