@@ -1,11 +1,14 @@
 name: 'Godot Export'
 description: 'Automatically exports your Godot games.'
-author: 'Firebelley'
+author: 'SlateyDev (forked from Firebelley)'
 branding:
   icon: 'box'
   color: 'white'
 inputs:
   # required inputs
+  blender_executable_download_url:
+    description: The download url of the Linux Blender executable.
+    required: false
   godot_executable_download_url:
     description: The download url of the Linux Headless Godot executable.
     required: true
