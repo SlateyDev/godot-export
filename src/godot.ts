@@ -409,7 +409,7 @@ function getExportPresets(): ExportPreset[] {
 
 function addEditorSettings(): void {
   const editorSettingsDist = path.join(__dirname, EDITOR_SETTINGS_FILENAME);
-  // await io.mkdirP(GODOT_CONFIG_PATH);
+  await io.mkdirP(GODOT_CONFIG_PATH);
 
   const editorSettingsPath = path.join(GODOT_CONFIG_PATH, EDITOR_SETTINGS_FILENAME);
   // await io.cp(editorSettingsDist, editorSettingsPath, { force: false });
